@@ -2,9 +2,13 @@ from bottle import route, run, request, response, template
 from io import BytesIO
 import qrcode
 import yaml
+import hashlib
 
 registered_keys={}
+ballot_url={}
+ballot_hash={}
 data_file_name="datafile.yml"
+BASEURL="http://127.0.0.1:5000/election/"
 
 def load_database():
         global registered_keys
@@ -22,7 +26,7 @@ def save_database():
     f.close()
 
 
-@route('/dump')
+route('/dump')
 def dump():
     response.set_header('Content-Type', 'application/json')
     return registered_keys
@@ -77,16 +81,16 @@ def set_kv(key, value):
 
 @route('/qr/<data>')
 def qr(data):
-    qrdata=""
+    qrdata=""    # string to encode
     if data in registered_keys.keys():
         # use the value registered to this key
-        #print( "generating QR code for: ", grdata)
         qrdata=registered_keys[data]
     else:
         # use the key
         qrdata=data
+        # or throw an error
         #return( "Key not registered: ", data)
-    print( "generating QR code for: ", qrdata)
+    print( "generating QR code with data: ", qrdata)
     membuf = BytesIO()
     img = qrcode.make(qrdata)
     img.save(membuf, format="png")
@@ -101,8 +105,73 @@ def serve_qr_form():
 @route('/qr', method='POST')
 def handle_qr_form():
     value = request.POST.get('value')
-    print( "handle_qr_form(): ", value )
+    #print( "handle_qr_form(): ", value )
     return qr(value)
+
+## vote-specific endpoints
+@route('/votingthing/register', method='GET')
+def vtregisterget():
+    # GET. display a registration page
+    # POST. process the registration form
+    return template('template/vtregisterget.tpl')
+
+
+@route('/votingthing/register', method='POST')
+def vtregisterpost():
+    # POST. process the registration form
+    label = request.POST.get('label')
+    fname = request.POST.get('fname')
+    lname = request.POST.get('lname')
+    EV = request.POST.get('EV')
+    storage_payload = {}
+    storage_payload['EV']=EV
+    storage_payload['fname']=fname
+    storage_payload['lname']=lname
+    #print( "storing at key:\t", label, "\t", storage_payload)
+    set_kv(label, storage_payload)
+    return( "OK")
+
+
+@route('/votingthing/get_vote_link', method='GET')
+def vtget_vote_link():
+    # GET. display a registration page
+    # POST. process the registration form
+    return template('template/vtgetvotelink.tpl')
+
+def generate_url(label):
+    global BASEURL
+    global ballot_url
+    string_to_hash = str(registered_keys[label])
+    result = hashlib.md5(string_to_hash.encode())
+    result = result.hexdigest()
+    print( "hash: ", result )
+    url = BASEURL + result
+    print( "url: ", url)
+    ballot_url[label]=url
+    ballot_hash[label]=result
+    print( ballot_url )
+    return( url )
+
+@route('/votingthing/get_vote_link', method='POST')
+def vtget_vote_link_post():
+    # GET. display a registration page
+    # POST. process the registration form
+    label = request.POST.get('label')
+    generate_url(label)   # stored in ballot_url so we don't need the return value
+    if label in registered_keys:
+        registered_keys[label]['link_given']=True
+        return qr( ballot_url[label])
+    else:
+        return( "invalid id. key ", label, " not found in the datastore")
+
+@route('/votingthing/check', method='POST')
+def vtcheck_post():
+    hash = request.POST.get('hash')
+    print( ballot_url.values() )
+    if hash in ballot_hash.values():
+        return("OK")
+    else:
+        return("INVALID")
 
 load_database()
 run(host='localhost', port=5000, debug=True, reloader=True)
