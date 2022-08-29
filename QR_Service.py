@@ -26,49 +26,26 @@ def save_database():
     f.close()
 
 
-route('/dump')
-def dump():
-    response.set_header('Content-Type', 'application/json')
-    return registered_keys
-
-@route('/<key>')
+#@route('/<key>')
 def get_value(key):
     if key in registered_keys.keys():
         return registered_keys[key]
     else:
         return "Fail. " + str(key) + " not registered"
 
-
-@route('/set/<key>', method='GET')
-def serve_set_one_form(key):
-    return template('template/set.tpl', key=key, key_input=str('value=' + key + ' disable'))
-
-
-@route('/set', method='GET')
-def serve_set_form():
-    return template('template/set.tpl', key_input="")
-
-
-@route('/set/<key>', method='POST')
+#@route('/set/<key>', method='POST')
 def set_value(key):
-    print("set_value()")
     value = request.POST.get('value')
     set_kv( key, value )
 
-@route('/set', method='POST')
-def set_endpoint():
-    print("set_endpoint()")
+#@route('/set', method='POST')
+def set_pair():
     value = request.POST.get('value')
     key = request.POST.get('key')
     set_kv(key, value)
 
 def set_kv(key, value):
     print("set_kv()\t", key, "\t", value )
-    #    try:
-#    value = request.POST.get('value')
-#    key = request.POST.get('key')
-#    except:
-#        return "Fail. Need to post a 'value'"
     assert isinstance(value, object)
     print("value: " , value )
     if value != None:
@@ -86,7 +63,7 @@ def qr(data):
         # use the value registered to this key
         qrdata=registered_keys[data]
     else:
-        # use the key
+      	# use the key
         qrdata=data
         # or throw an error
         #return( "Key not registered: ", data)
@@ -109,15 +86,15 @@ def handle_qr_form():
     return qr(value)
 
 ## vote-specific endpoints
-@route('/votingthing/register', method='GET')
-def vtregisterget():
+@route('/register', method='GET')
+def registerget():
     # GET. display a registration page
     # POST. process the registration form
-    return template('template/vtregisterget.tpl')
+    return template('template/register.tpl')
 
 
-@route('/votingthing/register', method='POST')
-def vtregisterpost():
+@route('/register', method='POST')
+def registerpost():
     # POST. process the registration form
     label = request.POST.get('label')
     fname = request.POST.get('fname')
@@ -132,11 +109,11 @@ def vtregisterpost():
     return( "OK")
 
 
-@route('/votingthing/get_vote_link', method='GET')
-def vtget_vote_link():
+@route('/get_vote_link', method='GET')
+def get_vote_link():
     # GET. display a registration page
     # POST. process the registration form
-    return template('template/vtgetvotelink.tpl')
+    return template('template/get_vote_link.tpl')
 
 def generate_url(label):
     global BASEURL
