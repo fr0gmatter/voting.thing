@@ -5,7 +5,7 @@
     <link rel="stylesheet" type="text/css" href="http://twitter.github.com/bootstrap/assets/css/bootstrap.css">
 </head>
 <body>
-    <form action="/votingthing/get_vote_link" method="post">
+    <form action="/get_vote_link" method="post">
         <fieldset>
             <legend>Get election URL for</legend>
             label <input type="text" id="label" name="label"><br>
