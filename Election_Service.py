@@ -1,6 +1,5 @@
 from bottle import route, run, request, response, template
-#MY_BASEURL="http://127.0.0.1:5001/election/"
-ELECTORAL_ROLL_SERVICE="http://127.0.0.1:5000/"
+ELECTORAL_ROLL_SERVICE="http://aec.fr0g.ovh:5000/"
 
 @route('/')
 def homepage():
